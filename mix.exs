@@ -4,6 +4,11 @@ defmodule Exdn.Mixfile do
   def project do
     [app: :exdn,
      version: "1.0.0",
+     description: """
+       a two-way translator between Elixir data structures and strings of data
+       following the edn specification.
+       """,
+     package: package,
      elixir: "~> 1.2",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
@@ -30,5 +35,11 @@ defmodule Exdn.Mixfile do
     [ { :erldn,     "~> 1.0.2" },
       { :calendar,  "~> 0.12.3"}
     ]
+  end
+
+  defp package do
+    [maintainers: ["Paul Blair"],
+     licenses: ["MIT"],
+     links: %{github: "https://github.com/psfblair/exdn"}]
   end
 end
