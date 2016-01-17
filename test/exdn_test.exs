@@ -141,17 +141,18 @@ defmodule ExdnTest do
     assert Exdn.to_elixir!(tagged, [{:foo, handler}]) == "blarg-converted"
   end
 
-  # to_elixir - safe version. We'll test this selectively since it's based on to_elixir!
+  # to_elixir - safe version. We'll test this selectively since it's based on the to_elixir! function
   test "nested map converts safely to Elixir" do
     map2 = "{:foo, \\a, \\b #inst \"1985-04-12T23:20:50.52Z\" }"
     {:ok, timestamp} = Calendar.DateTime.Parse.rfc3339_utc("1985-04-12T23:20:50.52Z")
     assert Exdn.to_elixir(map2) == {:ok, %{:foo => "a", "b" => timestamp}}
   end
 
-  test "unknown tag returns :error when irreversibly converting to Elixir" do
+  test "unknown tag returns :error when safely converting irreversibly to Elixir" do
     map2 = "{:foo, \\a, \\b #foo \"blarg\" }"
     assert Exdn.to_elixir(map2) == {:error, %RuntimeError{:message => "Handler not found for tag foo with tagged expression blarg"}}
   end
+
 
   # to_reversible
   test "char converts reversibly to Elixir" do
@@ -284,6 +285,140 @@ defmodule ExdnTest do
     assert Exdn.to_reversible(tagged) == {:tag, :foo, "blarg"}
   end
 
+
+  # from_elixir!
+  test "tagged char converts to EDN" do
+    assert Exdn.from_elixir!( {:char, ?a} ) == "\\a"
+  end
+
+  test "integer converts to EDN" do
+    assert Exdn.from_elixir!( 41 ) == "41"
+  end
+
+  test "float converts to EDN" do
+    assert Exdn.from_elixir!( 41.2 ) == "41.2"
+  end
+
+  test "keyword converts to EDN" do
+    assert Exdn.from_elixir!( :foo ) == ":foo"
+  end
+
+  test "nil converts to EDN" do
+    assert Exdn.from_elixir!( nil ) == "nil"
+  end
+
+  test "tagged symbol converts to EDN" do
+   assert Exdn.from_elixir!( {:symbol, :foo} ) == "foo"
+  end
+
+  test "true converts to EDN" do
+    assert Exdn.from_elixir!( true ) == "true"
+  end
+
+  test "false converts to EDN" do
+    assert Exdn.from_elixir!( false ) == "false"
+  end
+
+  test "string converts to EDN" do
+    assert Exdn.from_elixir!( "asd" ) == "\"asd\""
+  end
+
+  # Lists
+  # NOTE: Lists are generally used (in Datomic, at least) as forms and
+  # not as data structures. So we keep them distinct even in to_elixir!/1
+  test "empty list converts to EDN" do
+    assert Exdn.from_elixir!( {:list, []} ) == "()"
+  end
+
+  test "one-member list converts to EDN" do
+    assert Exdn.from_elixir!( {:list, [1]} ) == "(1)"
+  end
+
+  test "two-member list converts to EDN" do
+    assert Exdn.from_elixir!( {:list, [1, :foo]} ) == "(1 :foo)"
+  end
+
+  test "nested list converts to EDN" do
+    assert Exdn.from_elixir!( {:list, [1, {:char, ?a}]} ) == "(1 \\a)"
+  end
+
+
+  # Vectors
+  test "empty vector converts to EDN" do
+    assert Exdn.from_elixir!( [] ) == "[]"
+  end
+
+  test "one-member vector converts to EDN" do
+    assert Exdn.from_elixir!( [1] ) == "[1]"
+  end
+
+  test "two-member vector converts to EDN" do
+    assert Exdn.from_elixir!( [1, :foo] ) == "[1 :foo]"
+  end
+
+  test "nested vector converts to EDN" do
+    assert Exdn.from_elixir!( [1, { :char, ?a}] ) == "[1 \\a]"
+  end
+
+
+  # Sets
+  test "empty set converts to EDN" do
+    assert Exdn.from_elixir!( MapSet.new([]) ) == "\#{}"
+  end
+
+  test "one-member set converts to EDN" do
+    assert Exdn.from_elixir!( MapSet.new([1]) ) == "\#{1}"
+  end
+
+  test "two-member set converts to EDN" do
+    assert Exdn.from_elixir!( MapSet.new([1, :foo]) ) == "\#{1 :foo}"
+  end
+
+  test "nested set converts to EDN" do
+    set_to_convert = MapSet.new([1, {:char, ?a}])
+    assert Exdn.from_elixir!(set_to_convert) == "\#{1 \\a}"
+  end
+
+
+  # Maps
+  test "empty map converts to EDN" do
+    map0 = %{}
+    assert Exdn.from_elixir!(map0) == "{}"
+  end
+
+  test "one-entry map converts to EDN" do
+    map1 = %{1 => :foo}
+    assert Exdn.from_elixir!(map1) == "{1 :foo}"
+  end
+
+  test "two-entry map converts to EDN" do
+    map2 = %{1 => :foo, 2 => :bar}
+    assert Exdn.from_elixir!(map2) == "{1 :foo 2 :bar}"
+  end
+
+  test "nested map converts to EDN" do
+    map2 = %{:foo => {:char, ?a}, {:char, ?b} => 2}
+    assert Exdn.from_elixir!(map2) == "{:foo \\a \\b 2}"
+  end
+
+
+  # Tags
+  test "tag converts to EDN" do
+    tagged = {:tag, :inst, "1985-04-12T23:20:50.52Z"}
+    assert Exdn.from_elixir!(tagged) == "#inst \"1985-04-12T23:20:50.52Z\""
+  end
+
+  test "unknown tag converts to EDN" do
+    tagged = {:tag, :foo, "blarg"}
+    assert Exdn.from_elixir!(tagged) == "#foo \"blarg\""
+  end
+
+  # from_elixir - safe version. We'll test this selectively since it's based on the from_elixir! function
+  test "nested map converts safely to EDN" do
+    map2 = %{:foo => {:char, ?a}, {:char, ?b} => {:tag, :inst, "1985-04-12T23:20:50.52Z"} }
+
+    assert Exdn.from_elixir(map2) ==  {:ok, "{:foo \\a \\b #inst \"1985-04-12T23:20:50.52Z\"}" }
+  end
 
   # ad-hoc converters
   test "expression tagged with :list can be converted to list" do

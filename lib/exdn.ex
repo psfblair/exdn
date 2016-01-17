@@ -9,6 +9,7 @@ defmodule Exdn do
   # boolean	           boolean
   # nil	               nil (atom)
   # char               string
+  # char               string
   # string	           string
   # list	             tagged list {:list, [...]}
   # vector	           list
@@ -39,7 +40,7 @@ defmodule Exdn do
   end
 
   defp elrldn_to_elixir!( {:vector, items}, handlers )  do
-    convert_list(items, fn(x) -> elrldn_to_elixir!(x, handlers) end)
+    Enum.map(items, fn(item) -> elrldn_to_elixir!(item, handlers) end)
   end
 
   defp elrldn_to_elixir!( {:set, items},    handlers )  do
@@ -51,10 +52,10 @@ defmodule Exdn do
   end
 
   defp elrldn_to_elixir!( items,            handlers) when is_list(items) do
-    {:list, convert_list(items, fn(x) -> elrldn_to_elixir!(x, handlers) end)}
+    {:list, Enum.map(items, fn(item) -> elrldn_to_elixir!(item, handlers) end)}
   end
 
-  defp elrldn_to_elixir!( val, handlers), do: val
+  defp elrldn_to_elixir!(val, _handlers), do: val
 
   # to_reversible
   #
@@ -72,7 +73,6 @@ defmodule Exdn do
   # set	               mapset
   # symbol	           tagged atom {:symbol, atom}
   # tagged elements	   tagged tuple with tag and value -> {:tag, Symbol, Value}
-
   def to_reversible(edn) do
     erlang_str = edn |> to_char_list
     {:ok, erlang_intermediate } = :erldn.parse_str(erlang_str)
@@ -82,17 +82,11 @@ defmodule Exdn do
   defp reversible({:char, char}), do: {:char, char}
   defp reversible({:keyword, nil}), do: nil
   defp reversible({:tag, tag, val}), do: {:tag, tag, val}
-  defp reversible({:vector, items}), do: convert_list(items, fn(x) -> reversible(x) end)
+  defp reversible({:vector, items}), do: Enum.map(items, fn(item) -> reversible(item) end)
   defp reversible({:set, items}), do: convert_set(items, fn(x) -> reversible(x) end)
   defp reversible({:map, pairs}), do: convert_map(pairs, fn(x) -> reversible(x) end)
-  defp reversible(items) when is_list(items), do: {:list, convert_list(items, fn(x) -> reversible(x) end)}
+  defp reversible(items) when is_list(items), do: {:list, Enum.map(items, fn(item) -> reversible(item) end)}
   defp reversible(val), do: val
-
-
-  defp convert_list(items, converter) do
-    convert_item = fn (item) -> converter.(item) end
-    Enum.map(items, convert_item)
-  end
 
   defp convert_map(pairs, converter) do
     convert_pair = fn({key, val}) -> { converter.(key), converter.(val) } end
@@ -106,23 +100,55 @@ defmodule Exdn do
 
   # from_elixir
   #
-  # elixir	                                                 erlang-intermediate representation                       edn
-  # ---                                                       ---                                                     ---
-  # integer		                                                same                                                    integer
-  # float	  	                                                same                                                    float
-  # boolean		                                                same                                                    boolean
-  # nil	    	                                                same                                                    nil
-  # tagged string -> {:char, str}                             same                                                    char
-  # string	                                                  same                                                    string
-  # tagged list -> {:list, [...]}                             list                                                    list
-  # list                                                      tagged list -> {:vector, [...]}                         vector
-  # map                                                       tagged property list -> {:map, [{key1, val1}, ...]}     map
-  # mapset                                                    tagged list -> {:set, [...]}                            set
-  # tagged atom {:symbol, atom}                               same                                                    symbol
-  # tagged tuple with tag and value -> {:tag, Symbol, Value}  same                                                    tagged element
-  def from_elixir do
-
+  # elixir                                                       edn
+  # ---                                                          ---
+  # integer                                                      integer
+  # float                                                        float
+  # boolean                                                      boolean
+  # nil (atom)                                                   nil
+  # tagged integer -> {:char, <integer>}                         char
+  # string                                                       string
+  # tagged list {:list, [...]}                                   list
+  # list                                                         vector
+  # map                                                          map
+  # mapset                                                       set
+  # tagged atom {:symbol, atom}                                  symbol
+  # tagged tuple with tag and value -> {:tag, Symbol, Value}     tagged elements
+  def from_elixir(elixir_data) do
+    try do
+      {:ok, from_elixir!(elixir_data)}
+    rescue
+      e -> {:error, e}
+    end
   end
+
+  def from_elixir!(elixir_data) do
+    erldn_intermediate = to_erldn_intermediate(elixir_data)
+    :erldn.to_string(erldn_intermediate) |> to_string
+  end
+
+  defp to_erldn_intermediate(items) when is_list(items) do
+    {:vector, Enum.map(items, fn(x) -> to_erldn_intermediate(x) end)}
+  end
+
+  defp to_erldn_intermediate( {:list, items} )  do
+    Enum.map(items, fn(x) -> to_erldn_intermediate(x) end)
+  end
+
+  defp to_erldn_intermediate(%MapSet{} = set) do
+    items = Enum.map(set, fn(x) -> to_erldn_intermediate(x) end)
+    {:set, items}
+  end
+
+  defp to_erldn_intermediate(pairs) when is_map(pairs) do
+    convert_pair = fn({key, val}) -> { to_erldn_intermediate(key), to_erldn_intermediate(val) } end
+    keyword_list = pairs |> Enum.map(convert_pair)
+    {:map, keyword_list}
+  end
+
+  defp to_erldn_intermediate( {:tag, tag, val} ), do: {:tag, tag, to_erldn_intermediate(val) }
+
+  defp to_erldn_intermediate(val), do: val
 
   # Converters
   def tagged_list_to_list({:list, list}), do: list
