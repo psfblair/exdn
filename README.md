@@ -5,12 +5,12 @@ following the [edn specification](https://github.com/edn-format/edn);
 it wraps the [erldn edn parser](https://github.com/marianoguerra/erldn) 
 for Erlang, with some changes in the data formats (see below).
 
-[Installation](#installation)
-[Usage](#usage)
-[API](#api)
-[Type Mappings](#type-mappings)
-[Author](#author)
-[License](#license)
+ * [Installation](#installation)
+ * [Usage](#usage)
+ * [API](#api)
+ * [Type Mappings](#type-mappings)
+ * [Author](#author)
+ * [License](#license)
 
 ## Installation
 
