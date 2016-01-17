@@ -18,136 +18,129 @@ by adding exdn to your list of dependencies in `mix.exs`:
 ## Usage
 
     iex> Exdn.to_elixir! "41.2"
-    41.2
+      41.2
 
     iex> Exdn.to_elixir! ":foo"
-    :foo
+      :foo
 
     iex> Exdn.to_elixir! "true"
-    true
+      true
 
     iex> Exdn.to_elixir! "nil"
-    nil
+      nil
 
     iex> Exdn.to_elixir! "\"asd\""
-    "asd"
+      "asd"
 
     # Char
     iex> Exdn.to_elixir! "\\a"
-    "a"
+      "a"
     
     # Symbol
     iex> Exdn.to_elixir! "foo"
-    {:symbol, :foo}
+      {:symbol, :foo}
 
     # edn vectors become Elixir lists:
     iex> Exdn.to_elixir! "[1 :foo]"
-    [1, :foo]
+      [1, :foo]
 
-    # edn lists are always tagged. Since Datomic is a principal use of edn, 
-    # and since lists are used in Datomic primarily for executable expressions
-    # rather than as data structures, we use Elixir lists to represent vectors
-    # and keep edn lists specially tagged.
-    
+    # edn lists are always tagged. Since Datomic is a principal use of edn, and since lists are 
+    # used in Datomic primarily for executable expressions rather than as data structures, we 
+    # use Elixir lists to represent vectors and keep edn lists specially tagged:    
     iex> Exdn.to_elixir! "(1, :foo)"
-    {:list, [1, :foo]}
+      {:list, [1, :foo]}
 
     # edn sets become Elixir sets:
     iex> Exdn.to_elixir! "\#{1 \\a 1}"
-    MapSet.new([1, "a"])
+      #MapSet<[1, "a"]>
 
     # Maps become Elixir maps:
     iex> Exdn.to_elixir! "{1 :foo, 2 :bar}"
-    %{1 => :foo, 2 => :bar}
+      %{1 => :foo, 2 => :bar}
 
-    # Tagged expressions are converted. Standard converters for #inst and #uuid
-    # are included:
+    # Tagged expressions are converted. Standard converters for #inst and #uuid are included:
     iex> Exdn.to_elixir! "#inst \"1985-04-12T23:20:50.52Z\"" 
-    %Calendar.DateTime{abbr: "UTC", day: 12, hour: 23, min: 20, month: 4, sec: 50,
-       std_off: 0, timezone: "Etc/UTC", usec: 520000, utc_off: 0, year: 1985}
+      %Calendar.DateTime{abbr: "UTC", day: 12, hour: 23, min: 20, month: 4, sec: 50,
+        std_off: 0, timezone: "Etc/UTC", usec: 520000, utc_off: 0, year: 1985}
 
     iex> Exdn.to_elixir! "#uuid \"f81d4fae-7dec-11d0-a765-00a0c91e6bf6\"" 
-    "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
+      "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
 
     # You can provide your own handlers for tagged expressions:
-    
     iex> handler = fn(_tag, val, _handlers) -> val <> "-converted" end
     iex> Exdn.to_elixir! "#foo \"blarg\"", [{:foo, handler}] 
-    "blarg-converted"
+      "blarg-converted"
 
     # There is a safe version that doesn't raise exceptions:
     iex> Exdn.to_elixir "{1 :foo, 2 :bar}"
-    {:ok, %{1 => :foo, 2 => :bar}}
+      {:ok, %{1 => :foo, 2 => :bar}}
 
     iex> Exdn.to_elixir "{:foo, \\a, \\b #foo \"blarg\" }"
-    {:error, %RuntimeError{:message => "Handler not found for tag foo with tagged expression blarg"}}
+      {:error, %RuntimeError{:message => "Handler not found for tag foo with tagged expression blarg"}}
 
-    # There is an "intermediate" representation that can be converted back
-    # to edn. The difference is that chars and tagged expressions are converted
-    # to tagged tuples.
-    
+    # There is also an "intermediate" representation that can be converted back to edn. The 
+    # difference is that chars and tagged expressions are converted to tagged tuples:    
     iex> Exdn.to_reversible( "\\a" )
-    {:char, ?a}
+      {:char, ?a}
     
     iex> Exdn.to_reversible "#inst \"1985-04-12T23:20:50.52Z\""
-    {:tag, :inst, "1985-04-12T23:20:50.52Z"}
+      {:tag, :inst, "1985-04-12T23:20:50.52Z"}
 
     # An unknown tag raises no error when using the reversible conversion:
     iex> Exdn.to_reversible "#foo \"blarg\""
-    {:tag, :foo, "blarg"}
+      {:tag, :foo, "blarg"}
 
     # The intermediate representation can be converted back to edn:
     iex> Exdn.from_elixir! 41.2
-    "41.2"
+      "41.2"
 
     iex> Exdn.from_elixir! :foo
-    ":foo"
+      ":foo"
 
     iex> Exdn.from_elixir! true
-    "true"
+      "true"
 
     iex> Exdn.from_elixir! nil
-    "nil"
+      "nil"
 
     iex> Exdn.from_elixir! "asd"
-    "\"asd\""
+      "\"asd\""
 
     iex> Exdn.from_elixir! {:char, ?a}
-    "\\a"
+      "\\a"
 
     iex> Exdn.from_elixir! {:symbol, :foo}
-    "foo"
+      "foo"
 
     iex> Exdn.from_elixir! [1, :foo]
-    "[1 :foo]"
+      "[1 :foo]"
 
     iex> Exdn.from_elixir! {:list, [1, :foo]}
-    "(1 :foo)"
+      "(1 :foo)"
 
     iex> Exdn.from_elixir! MapSet.new([1, :foo])
-    "\#{1 :foo}"
+      "\#{1 :foo}"
 
     iex> Exdn.from_elixir! %{1 => :foo, 2 => :bar}
-    "{1 :foo 2 :bar}"
+      "{1 :foo 2 :bar}"
 
     iex> Exdn.from_elixir! {:tag, :inst, "1985-04-12T23:20:50.52Z"}
-    "#inst \"1985-04-12T23:20:50.52Z\""
+      "#inst \"1985-04-12T23:20:50.52Z\""
 
-    # There is a safe version that doesn't raise exceptions:
+    # There is a safe version for converting back to edn that doesn't raise exceptions:
     iex> Exdn.from_elixir %{:foo => {:char, ?a}, {:char, ?b} => {:tag, :inst, "1985-04-12T23:20:50.52Z"} }
-    {:ok, "{:foo \\a \\b #inst \"1985-04-12T23:20:50.52Z\"}" }
+      {:ok, "{:foo \\a \\b #inst \"1985-04-12T23:20:50.52Z\"}" }
     
-    # There are also converters you can use if you want to handle
-    # chars, lists, or tags on an ad-hoc basis:
+    # There are also converters you can use if you want to handle chars, lists, or tags on an ad-hoc basis:
     iex> Exdn.tagged_list_to_list {:list, [:foo]}
-    [:foo]
+      [:foo]
     
     iex> Exdn.tagged_char_to_string {:char, ?a}
-    "a"
+      "a"
     
     iex> handler = fn(_tag, val, _handlers) -> val <> "-converted" end
     iex> Exdn.evaluate_tagged_expr {:tag, :foo, "blarg"}, [{:foo, handler}])
-    "blarg-converted"
+      "blarg-converted"
 API
 ---
 
