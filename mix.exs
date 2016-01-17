@@ -3,7 +3,7 @@ defmodule Exdn.Mixfile do
 
   def project do
     [app: :exdn,
-     version: "0.0.1",
+     version: "1.0.0",
      elixir: "~> 1.2",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
@@ -27,10 +27,8 @@ defmodule Exdn.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   defp deps do
-    [ { :datomex,   "~> 0.0.1" },
-      { :erldn,     "~> 1.0.2" },
-      { :calendar,  "~> 0.12.3"},
-      { :httpoison, "~> 0.8.0" }
+    [ { :erldn,     "~> 1.0.2" },
+      { :calendar,  "~> 0.12.3"}
     ]
   end
 end
