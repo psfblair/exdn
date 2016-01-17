@@ -1,6 +1,5 @@
 defmodule ExdnTest do
   use ExUnit.Case
-  doctest Exdn
 
   test "char converts irreversibly to Elixir" do
     assert Exdn.to_elixir!( "\\a" ) == "a"
