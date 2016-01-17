@@ -1,9 +1,9 @@
 # Exdn - an edn parser for the Elixir platform
 
 Exdn is a two-way translator between Elixir data structures and data 
-following the `edn specification <https://github.com/edn-format/edn>`_;
+following the [edn specification](https://github.com/edn-format/edn);
 
-It wraps the `erldn edn parser <https://github.com/marianoguerra/erldn>` 
+It wraps the [erldn edn parser](https://github.com/marianoguerra/erldn) 
 for Erlang, with some changes in the data formats (see below).
 
 ## Installation
@@ -198,11 +198,11 @@ by adding exdn to your list of dependencies in `mix.exs`:
 | nil	            | nil (atom)
 | char            | string
 | string	        | string
-| list	          | tagged list {:list, [...]}
+| list	          | tagged list `{:list, [...]}`
 | vector	        | list
 | map	            | map
 | set	            | mapset
-| symbol	        | tagged atom {:symbol, atom}
+| symbol	        | tagged atom `{:symbol, atom}`
 | tagged elements	| call registered handler for that tag, fail if not found
 
 
@@ -214,14 +214,14 @@ by adding exdn to your list of dependencies in `mix.exs`:
 | float	          | float
 | boolean	        | boolean
 | nil	            | nil (atom)
-| char            | tagged integer {:char, <integer>}
+| char            | tagged integer `{:char, <integer>}`
 | string	        | string
-| list	          | tagged list {:list, [...]}
+| list	          | tagged list `{:list, [...]}`
 | vector	        | list
 | map	            | map
 | set	            | mapset
-| symbol	        | tagged atom {:symbol, atom}
-| tagged elements | tagged tuple with tag and value {:tag, Symbol, Value}
+| symbol	        | tagged atom `{:symbol, atom}`
+| tagged elements | tagged tuple with tag and value `{:tag, Symbol, Value}`
 
 ## Author
 
