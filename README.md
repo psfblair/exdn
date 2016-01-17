@@ -145,40 +145,40 @@ by adding exdn to your list of dependencies in `mix.exs`:
 ## API
 
 #### to_elixir!/1
-> parses an edn string into an Elixir data structure; this is not a reversible
-> conversion as chars are converted to strings, and tagged expressions are 
-> interpreted. This function can throw exceptions; for example, if a tagged
-> expression cannot be interpreted.
+⋅⋅⋅ parses an edn string into an Elixir data structure; this is not a reversible
+⋅⋅⋅ conversion as chars are converted to strings, and tagged expressions are 
+⋅⋅⋅ interpreted. This function can throw exceptions; for example, if a tagged
+⋅⋅⋅ expression cannot be interpreted.
 
 #### to_elixir!/2
-> the second argument allows you to supply your own handlers for the interpretation
-> of tagged expressions. These should be in the form of a keyword list.
-> The first element of each pair should be a keyword corresponding to the tag,
-> and the second element a function of three parameters (tag, value, handlers)
-> that handles the tagged values.
+⋅⋅⋅ the second argument allows you to supply your own handlers for the interpretation
+⋅⋅⋅ of tagged expressions. These should be in the form of a keyword list.
+⋅⋅⋅ The first element of each pair should be a keyword corresponding to the tag,
+⋅⋅⋅ and the second element a function of three parameters (tag, value, handlers)
+⋅⋅⋅ that handles the tagged values.
 
 #### to_elixir/1
-> also parses an edn string into an Elixir data structure, but does not throw
-> exceptions. The parse result is returned as the second element of a pair 
-> whose first element is :ok -- if there is an error the first element will
-> be :error and the second the error that was raised.
+⋅⋅⋅ also parses an edn string into an Elixir data structure, but does not throw
+⋅⋅⋅ exceptions. The parse result is returned as the second element of a pair 
+⋅⋅⋅ whose first element is :ok -- if there is an error the first element will
+⋅⋅⋅ be :error and the second the error that was raised.
 
 #### to_elixir/2
-> safe version of `to_elixir!/2`.
+⋅⋅⋅ safe version of `to_elixir!/2`.
 
 #### from_elixir!/1
-> converts an Elixir data structure in the "reversible" format (see below) into 
-> an edn string. Will raise exceptions if the data structure cannot be converted.
+⋅⋅⋅ converts an Elixir data structure in the "reversible" format (see below) into 
+⋅⋅⋅ an edn string. Will raise exceptions if the data structure cannot be converted.
 
 #### from_elixir/1
-> safe version of `from_elixir!/1` -- the edn string is returned as the second 
-> element of a pair whose first element is :ok -- if there is an error the first 
-> element will be :error and the second the error that was raised.
+⋅⋅⋅ safe version of `from_elixir!/1` -- the edn string is returned as the second 
+⋅⋅⋅ element of a pair whose first element is :ok -- if there is an error the first 
+⋅⋅⋅ element will be :error and the second the error that was raised.
 
 #### to_reversible/1    
-> parses an edn string into an Elixir data structure, but in a reversible way --
-> chars and tagged expressions are represented using tuples whose first element
-> is `:char` or `:tag`, respectively.
+⋅⋅⋅ parses an edn string into an Elixir data structure, but in a reversible way --
+⋅⋅⋅ chars and tagged expressions are represented using tuples whose first element
+⋅⋅⋅ is `:char` or `:tag`, respectively.
 
 
 ## Type Mappings
