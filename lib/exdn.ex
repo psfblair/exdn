@@ -9,7 +9,6 @@ defmodule Exdn do
   # boolean	           boolean
   # nil	               nil (atom)
   # char               string
-  # char               string
   # string	           string
   # list	             tagged list {:list, [...]}
   # vector	           list
@@ -17,7 +16,6 @@ defmodule Exdn do
   # set	               mapset
   # symbol	           tagged atom {:symbol, atom}
   # tagged elements	   call registered handler for that tag, fail if not found
-
   def to_elixir(val, handlers \\ standard_handlers) do
     try do
       {:ok, to_elixir!(val, handlers)}
@@ -65,14 +63,14 @@ defmodule Exdn do
   # float	             float
   # boolean	           boolean
   # nil	               nil (atom)
-  # char               tagged integer -> {:char, <integer>}
-  # string	           binary string (utf-8)
+  # char               tagged integer {:char, <integer>}
+  # string	           string
   # list	             tagged list {:list, [...]}
   # vector	           list
   # map	               map
   # set	               mapset
   # symbol	           tagged atom {:symbol, atom}
-  # tagged elements	   tagged tuple with tag and value -> {:tag, Symbol, Value}
+  # tagged elements	   tagged tuple with tag and value {:tag, Symbol, Value}
   def to_reversible(edn) do
     erlang_str = edn |> to_char_list
     {:ok, erlang_intermediate } = :erldn.parse_str(erlang_str)
@@ -100,20 +98,20 @@ defmodule Exdn do
 
   # from_elixir
   #
-  # elixir                                                       edn
-  # ---                                                          ---
-  # integer                                                      integer
-  # float                                                        float
-  # boolean                                                      boolean
-  # nil (atom)                                                   nil
-  # tagged integer -> {:char, <integer>}                         char
-  # string                                                       string
-  # tagged list {:list, [...]}                                   list
-  # list                                                         vector
-  # map                                                          map
-  # mapset                                                       set
-  # tagged atom {:symbol, atom}                                  symbol
-  # tagged tuple with tag and value -> {:tag, Symbol, Value}     tagged elements
+  # elixir                                                    edn
+  # ---                                                       ---
+  # integer                                                   integer
+  # float                                                     float
+  # boolean                                                   boolean
+  # nil (atom)                                                nil
+  # tagged integer {:char, <integer>}                         char
+  # string                                                    string
+  # tagged list {:list, [...]}                                list
+  # list                                                      vector
+  # map                                                       map
+  # mapset                                                    set
+  # tagged atom {:symbol, atom}                               symbol
+  # tagged tuple with tag and value {:tag, Symbol, Value}     tagged elements
   def from_elixir(elixir_data) do
     try do
       {:ok, from_elixir!(elixir_data)}
