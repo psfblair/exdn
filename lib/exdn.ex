@@ -110,6 +110,19 @@ defmodule Exdn do
       iex> Exdn.to_elixir! "{1 :foo, 2 :bar}"
       %{1 => :foo, 2 => :bar}
 
+      # You can also transform maps to Elixir structs by providing your own converter in the second argument:
+      iex> defmodule FooStruct do
+      ...>    defstruct foo: "default"
+      ...> end
+      iex> converter = fn map ->
+      ...>    case map do
+      ...>       %{:foo => _} -> struct(FooStruct, map)
+      ...>       anything_else -> anything_else
+      ...>     end
+      ...>   end
+      iex>  Exdn.to_elixir! "{:foo 1, :bar 2}", converter
+      %FooStruct{foo: 1}
+
       # Tagged expressions are converted. Standard converters for #inst and #uuid are included:
       iex> Exdn.to_elixir! "#inst \"1985-04-12T23:20:50.52Z\""
       %Calendar.DateTime{abbr: "UTC", day: 12, hour: 23, min: 20, month: 4, sec: 50,
@@ -162,7 +175,7 @@ defmodule Exdn do
 
   defp elrldn_to_elixir!( {:tag, tag, val}, converter, handlers )  do
     case converter.({:tag, tag, val}) do
-      {:tag, tag, val} -> evaluate_tagged_expr({:tag, tag, val}, converter, handlers)
+      {:tag, atag, aval} -> evaluate_tagged_expr({:tag, atag, aval}, converter, handlers)
       anything_else -> anything_else
     end
   end
@@ -267,6 +280,9 @@ defmodule Exdn do
       iex> Exdn.from_elixir! %{1 => :foo, 2 => :bar}
       "{1 :foo 2 :bar}"
 
+      iex> Exdn.from_elixir! %SomeStruct{foo: 1, bar: 2}
+      "{:foo 1 :bar 2}"
+
       iex> Exdn.from_elixir! {:tag, :inst, "1985-04-12T23:20:50.52Z"}
       "#inst \"1985-04-12T23:20:50.52Z\""
   """
@@ -313,16 +329,16 @@ defmodule Exdn do
     {:map, keyword_list}
   end
 
+  defp to_erldn_intermediate( {:tag, tag, val} ), do: {:tag, tag, to_erldn_intermediate(val) }
+
+  defp to_erldn_intermediate(val), do: val
+
   defp to_map(struct_or_map) do
     case struct_or_map do
       %{__struct__: _ } -> Map.from_struct struct_or_map
       _ -> struct_or_map
     end
   end
-
-  defp to_erldn_intermediate( {:tag, tag, val} ), do: {:tag, tag, to_erldn_intermediate(val) }
-
-  defp to_erldn_intermediate(val), do: val
 
   @doc """
     extracts a list from the tagged reversible representation; does not operate at all
