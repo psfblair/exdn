@@ -57,7 +57,7 @@ defmodule ExdnTest do
   end
 
   test "nested list converts to Elixir" do
-    assert Exdn.to_elixir!("(1, \\a)") == {:list, [1, "a"]}
+    assert Exdn.to_elixir!("(1, (1, \\a))") == {:list, [1, {:list, [1, "a"]}]}
   end
 
 
@@ -75,7 +75,7 @@ defmodule ExdnTest do
   end
 
   test "nested vector converts to Elixir" do
-    assert Exdn.to_elixir!("[1 \\a]") == [1, "a"]
+    assert Exdn.to_elixir!("[[1 \\a], 1]") == [[1, "a"], 1]
   end
 
 
@@ -93,8 +93,8 @@ defmodule ExdnTest do
   end
 
   test "nested set converts to Elixir" do
-    edn_set = "\#{1 \\a 1}"
-    assert Exdn.to_elixir!(edn_set) == MapSet.new([1, "a"])
+    edn_set = "\#{1 \\a 1 \#{1}}"
+    assert Exdn.to_elixir!(edn_set) == MapSet.new([1, "a", MapSet.new([1])])
   end
 
 
@@ -115,8 +115,8 @@ defmodule ExdnTest do
   end
 
   test "nested map converts to Elixir" do
-    map2 = "{:foo, \\a, \\b 2 }"
-    assert Exdn.to_elixir!(map2) == %{:foo => "a", "b" => 2}
+    map2 = "{:foo, \\a, {:bar \\b} [1 2]}"
+    assert Exdn.to_elixir!(map2) == %{:foo => "a", %{:bar => "b"} => [1, 2] }
   end
 
 
