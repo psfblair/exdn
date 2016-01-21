@@ -377,7 +377,8 @@ defmodule Exdn do
     if handler do
       handler.(tag, expr, converter, handlers)
     else
-      raise "Handler not found for tag #{tag} with tagged expression #{expr}"
+      expr_string = inspect(expr)
+      raise "Handler not found for tag #{tag} with tagged expression #{expr_string}"
     end
   end
 

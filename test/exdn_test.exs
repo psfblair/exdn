@@ -218,8 +218,8 @@ defmodule ExdnTest do
   end
 
   test "unknown tag raises an error when irreversibly converting to Elixir" do
-    tagged = "#foo \"blarg\""
-    assert_raise RuntimeError, "Handler not found for tag foo with tagged expression blarg", fn ->
+    tagged = "#foo [\"blarg\"]"
+    assert_raise RuntimeError, "Handler not found for tag foo with tagged expression {:vector, [\"blarg\"]}", fn ->
       Exdn.to_elixir!(tagged)
     end
   end
@@ -239,8 +239,8 @@ defmodule ExdnTest do
   end
 
   test "unknown tag returns :error when safely converting irreversibly to Elixir" do
-    map2 = "{:foo, \\a, \\b #foo \"blarg\" }"
-    assert Exdn.to_elixir(map2) == {:error, %RuntimeError{:message => "Handler not found for tag foo with tagged expression blarg"}}
+    map2 = "{:foo, \\a, \\b #foo [\"blarg\"] }"
+    assert Exdn.to_elixir(map2) == {:error, %RuntimeError{:message => "Handler not found for tag foo with tagged expression {:vector, [\"blarg\"]}"}}
   end
 
 
