@@ -383,7 +383,7 @@ defmodule Exdn do
   end
 
   # Handlers
-  defp standard_handlers do
+  def standard_handlers do
     timestamp_handler = { :inst, fn(_tag, val, _converter, _handlers) -> inst_handler(val) end }
     uuid_handler = { :uuid, fn(_tag, val, _converter, _handlers) -> val |> to_string end }
     # TODO Discard Handler This shouldn't return nil; it should swallow the val.
