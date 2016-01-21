@@ -210,7 +210,7 @@ defmodule ExdnTest do
   end
 
   test "nested list converts reversibly to Elixir" do
-    assert Exdn.to_reversible("(1, \\a)") == {:list, [1, {:char, ?a}]}
+    assert Exdn.to_reversible("(1, (1, \\a))") == {:list, [1, {:list, [1, {:char, ?a}]}]}
   end
 
 
@@ -228,7 +228,7 @@ defmodule ExdnTest do
   end
 
   test "nested vector converts reversibly to Elixir" do
-    assert Exdn.to_reversible("[1 \\a]") == [1, { :char, ?a}]
+    assert Exdn.to_reversible("[[1 \\a], 1]") == [[1, { :char, ?a}], 1]
   end
 
 
@@ -246,8 +246,8 @@ defmodule ExdnTest do
   end
 
   test "nested set converts reversibly to Elixir" do
-    edn_set = "\#{1 \\a 1}"
-    assert Exdn.to_reversible(edn_set) == MapSet.new([1, {:char, ?a}])
+    edn_set = "\#{1 \\a 1 \#{1}}"
+    assert Exdn.to_reversible(edn_set) == MapSet.new([1, {:char, ?a}, MapSet.new([1])])
   end
 
 
@@ -268,8 +268,8 @@ defmodule ExdnTest do
   end
 
   test "nested map converts reversibly to Elixir" do
-    map2 = "{:foo, \\a, \\b 2 }"
-    assert Exdn.to_reversible(map2) == %{:foo => {:char, ?a}, {:char, ?b} => 2}
+    map2 = "{:foo, \\a, {:bar \\b} [1 2]}"
+    assert Exdn.to_reversible(map2) == %{:foo => {:char, ?a}, %{:bar => {:char, ?b}} => [1, 2]}
   end
 
 
@@ -338,7 +338,7 @@ defmodule ExdnTest do
   end
 
   test "nested list converts to EDN" do
-    assert Exdn.from_elixir!( {:list, [1, {:char, ?a}]} ) == "(1 \\a)"
+    assert Exdn.from_elixir!( {:list, [1, {:list, [1, {:char, ?a}]}]} ) == "(1 (1 \\a))"
   end
 
 
@@ -356,7 +356,7 @@ defmodule ExdnTest do
   end
 
   test "nested vector converts to EDN" do
-    assert Exdn.from_elixir!( [1, { :char, ?a}] ) == "[1 \\a]"
+    assert Exdn.from_elixir!( [[1, {:char, ?a}], 1] ) == "[[1 \\a] 1]"
   end
 
 
@@ -374,8 +374,8 @@ defmodule ExdnTest do
   end
 
   test "nested set converts to EDN" do
-    set_to_convert = MapSet.new([1, {:char, ?a}])
-    assert Exdn.from_elixir!(set_to_convert) == "\#{1 \\a}"
+    set_to_convert = MapSet.new([1, {:char, ?a}, MapSet.new([1])])
+    assert Exdn.from_elixir!(set_to_convert) == "\#{1 \\a \#{1}}"
   end
 
 
@@ -396,8 +396,8 @@ defmodule ExdnTest do
   end
 
   test "nested map converts to EDN" do
-    map2 = %{:foo => {:char, ?a}, {:char, ?b} => 2}
-    assert Exdn.from_elixir!(map2) == "{:foo \\a \\b 2}"
+    map2 = %{:foo => {:char, ?a}, %{:bar => {:char, ?b}} => [1, 2]}
+    assert Exdn.from_elixir!(map2) == "{:foo \\a {:bar \\b} [1 2]}"
   end
 
 
