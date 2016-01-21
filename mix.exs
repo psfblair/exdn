@@ -3,7 +3,7 @@ defmodule Exdn.Mixfile do
 
   def project do
     [app: :exdn,
-     version: "1.0.1",
+     version: "2.0.0",
      description: """
        a two-way translator between Elixir data structures and strings of data
        following the edn specification.

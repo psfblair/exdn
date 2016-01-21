@@ -58,7 +58,9 @@ defmodule Exdn do
      interpreted. This function can throw exceptions; for example, if a tagged
      expression cannot be interpreted.
 
-     The second (optional) argument allows you to supply your own handlers for
+     The second (optional) argument
+
+     The third (optional) argument allows you to supply your own handlers for
      the interpretation of tagged expressions. These should be in the form of a
      keyword list. The first element of each pair should be a keyword corresponding
      to the tag, and the second element a function of three parameters
@@ -121,10 +123,10 @@ defmodule Exdn do
       iex> Exdn.to_elixir! "#foo \"blarg\"", [{:foo, handler}]
       "blarg-converted"
   """
-  def to_elixir!(edn, handlers \\ standard_handlers) do
+  def to_elixir!(edn, converter \\ (fn x -> x end), handlers \\ standard_handlers) do
     erlang_str = edn |> to_char_list
     {:ok, erlang_intermediate } = :erldn.parse_str(erlang_str)
-    elrldn_to_elixir!(erlang_intermediate, handlers)
+    elrldn_to_elixir!(erlang_intermediate, converter, handlers)
   end
 
   @doc """
@@ -141,38 +143,47 @@ defmodule Exdn do
      iex> Exdn.to_elixir "{:foo, \\a, \\b #foo \"blarg\" }"
      {:error, %RuntimeError{:message => "Handler not found for tag foo with tagged expression blarg"}}
   """
-  def to_elixir(val, handlers \\ standard_handlers) do
+  def to_elixir(val, converter \\ (fn x -> x end), handlers \\ standard_handlers) do
     try do
-      {:ok, to_elixir!(val, handlers)}
+      {:ok, to_elixir!(val, converter, handlers)}
     rescue
       e -> {:error, e}
     end
   end
 
-  defp elrldn_to_elixir!( {:char, char},   _handlers ), do: to_string([char])
-  defp elrldn_to_elixir!( {:keyword, nil}, _handlers ), do: nil
-
-  defp elrldn_to_elixir!( {:tag, tag, val}, handlers )  do
-    evaluate_tagged_expr({:tag, tag, val}, handlers)
+  defp elrldn_to_elixir!( {:char, char},    converter, _handlers ) do
+    case converter.({:char, char}) do
+      {:char, char} -> to_string([char])
+      anything_else -> anything_else
+    end
   end
 
-  defp elrldn_to_elixir!( {:vector, items}, handlers )  do
-    Enum.map(items, fn(item) -> elrldn_to_elixir!(item, handlers) end)
+  defp elrldn_to_elixir!( {:keyword, nil},  converter, _handlers ), do: converter.(nil)
+
+  defp elrldn_to_elixir!( {:tag, tag, val}, converter, handlers )  do
+    case converter.({:tag, tag, val}) do
+      {:tag, tag, val} -> evaluate_tagged_expr({:tag, tag, val}, converter, handlers)
+      anything_else -> anything_else
+    end
   end
 
-  defp elrldn_to_elixir!( {:set, items},    handlers )  do
-    convert_set(items, fn(x) -> elrldn_to_elixir!(x, handlers) end)
+  defp elrldn_to_elixir!( {:vector, items}, converter, handlers )  do
+    Enum.map(items, fn(item) -> elrldn_to_elixir!(item, converter, handlers) end) |> (fn(x) -> converter.(x) end).()
   end
 
-  defp elrldn_to_elixir!( {:map, pairs},    handlers )  do
-    convert_map(pairs, fn(x) -> elrldn_to_elixir!(x, handlers) end)
+  defp elrldn_to_elixir!( {:set, items},    converter, handlers )  do
+    convert_set(items, fn(x) -> elrldn_to_elixir!(x, converter, handlers) end) |> (fn(x) -> converter.(x) end).()
   end
 
-  defp elrldn_to_elixir!( items,            handlers) when is_list(items) do
-    {:list, Enum.map(items, fn(item) -> elrldn_to_elixir!(item, handlers) end)}
+  defp elrldn_to_elixir!( {:map, pairs},    converter, handlers )  do
+    convert_map(pairs, fn(x) -> elrldn_to_elixir!(x, converter, handlers) end) |> (fn(x) -> converter.(x) end).()
   end
 
-  defp elrldn_to_elixir!(val, _handlers), do: val
+  defp elrldn_to_elixir!( items,            converter, handlers) when is_list(items) do
+    {:list, Enum.map(items, fn(item) -> elrldn_to_elixir!(item, converter, handlers) end) |> (fn(x) -> converter.(x) end).() }
+  end
+
+  defp elrldn_to_elixir!(val, converter, _handlers), do: converter.(val)
 
   @doc """
     parses an edn string into an Elixir data structure, but in a reversible way --
@@ -295,10 +306,18 @@ defmodule Exdn do
     {:set, items}
   end
 
+  # Works on structs or maps
   defp to_erldn_intermediate(pairs) when is_map(pairs) do
     convert_pair = fn({key, val}) -> { to_erldn_intermediate(key), to_erldn_intermediate(val) } end
-    keyword_list = pairs |> Enum.map(convert_pair)
+    keyword_list = pairs |> to_map |> Enum.map(convert_pair)
     {:map, keyword_list}
+  end
+
+  defp to_map(struct_or_map) do
+    case struct_or_map do
+      %{__struct__: _ } -> Map.from_struct struct_or_map
+      _ -> struct_or_map
+    end
   end
 
   defp to_erldn_intermediate( {:tag, tag, val} ), do: {:tag, tag, to_erldn_intermediate(val) }
@@ -328,20 +347,19 @@ defmodule Exdn do
 
   @doc """
     interprets a tagged expression using the tagged reversible representation and
-    handlers passed in as a keyword list. Does not operate at all
-    on the contents of the extracted list.
+    handlers passed in as a keyword list.
 
 ## Example:
 
       iex> tagged = {:tag, :foo, "blarg"}
-      iex> handler = fn(_tag, val, _handlers) -> val <> "-converted" end
+      iex> handler = fn(_tag, val, _converter, _handlers) -> val <> "-converted" end
       iex> Exdn.evaluate_tagged_expr(tagged, [{:foo, handler}]
       "blarg-converted"
   """
-  def evaluate_tagged_expr({:tag, tag, expr}, handlers) do
+  def evaluate_tagged_expr({:tag, tag, expr}, converter, handlers) do
     handler = handlers[tag]
     if handler do
-      handler.(tag, expr, handlers)
+      handler.(tag, expr, converter, handlers)
     else
       raise "Handler not found for tag #{tag} with tagged expression #{expr}"
     end
@@ -349,10 +367,10 @@ defmodule Exdn do
 
   # Handlers
   defp standard_handlers do
-    timestamp_handler = { :inst, fn(_tag, val, _handlers) -> inst_handler(val) end }
-    uuid_handler = { :uuid, fn(_tag, val, _handlers) -> val |> to_string end }
+    timestamp_handler = { :inst, fn(_tag, val, _converter, _handlers) -> inst_handler(val) end }
+    uuid_handler = { :uuid, fn(_tag, val, _converter, _handlers) -> val |> to_string end }
     # TODO Discard Handler This shouldn't return nil; it should swallow the val.
-    # discard_handler = { :_, fn(tag, val, handlers) -> ??? end }
+    # discard_handler = { :_, fn(tag, val, _converter, _handlers) -> ??? end }
     [ timestamp_handler, uuid_handler ]
   end
 

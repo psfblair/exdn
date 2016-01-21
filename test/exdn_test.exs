@@ -1,3 +1,11 @@
+defmodule FooStruct do
+   defstruct foo: "default"
+end
+
+defmodule BarStruct do
+   defstruct bar: "default"
+end
+
 defmodule ExdnTest do
   use ExUnit.Case
 
@@ -120,6 +128,88 @@ defmodule ExdnTest do
   end
 
 
+  # Structs
+  test "empty map can be converted to Elixir struct" do
+    map0 = "{}"
+    converter = fn map ->
+       case map do
+          %{} -> struct(FooStruct, map)
+          anything_else -> anything_else
+        end
+      end
+    assert Exdn.to_elixir!(map0, converter) == %FooStruct{}
+  end
+
+  test "one-entry map can be converted to Elixir struct" do
+    map1 = "{:foo 1}"
+    converter = fn map ->
+       case map do
+          %{} -> struct(FooStruct, map)
+          anything_else -> anything_else
+        end
+      end
+    assert Exdn.to_elixir!(map1, converter) == %FooStruct{:foo => 1}
+  end
+
+  test "two-entry map can be converted to Elixir struct with loss" do
+    map2 = "{:foo 1 :bar 2}"
+    converter = fn map ->
+       case map do
+          %{:foo => _} -> struct(FooStruct, map)
+          anything_else -> anything_else
+        end
+      end
+    assert Exdn.to_elixir!(map2, converter) == %FooStruct{:foo => 1}
+  end
+
+  test "two-entry map can be made to raise an exception if keys are unrecognized when converting to Elixir struct" do
+    map2 = "{:foo 1 :bar 2}"
+    converter = fn map ->
+       case map do
+          %{:foo => _} -> struct!(FooStruct, map)
+          anything_else -> anything_else
+        end
+      end
+    assert_raise KeyError, "key :bar not found in: %FooStruct{foo: \"default\"}", fn ->
+      Exdn.to_elixir!(map2, converter)
+    end
+  end
+
+  test "can convert outer map of nested map to Elixir struct" do
+    map2 = "{:foo, {:bar \\b}}"
+    converter = fn map ->
+       case map do
+          %{:foo => _} -> struct!(FooStruct, map)
+          anything_else -> anything_else
+        end
+      end
+    assert Exdn.to_elixir!(map2, converter) == %FooStruct{:foo => %{:bar => "b"} }
+  end
+
+  test "can convert inner map of nested map to Elixir struct" do
+    map2 = "{:bar, {:foo \\b}}"
+    converter = fn map ->
+       case map do
+          %{:foo => _} -> struct!(FooStruct, map)
+          anything_else -> anything_else
+        end
+      end
+    assert Exdn.to_elixir!(map2, converter) == %{:bar => %FooStruct{:foo => "b"} }
+  end
+
+  test "can convert nested maps to Elixir structs" do
+    map2 = "{:bar, {:foo \\b}}"
+    converter = fn map ->
+       case map do
+          %{:foo => _} -> struct!(FooStruct, map)
+          %{:bar => _} -> struct!(BarStruct, map)
+          anything_else -> anything_else
+        end
+      end
+    assert Exdn.to_elixir!(map2, converter) == %BarStruct{:bar => %FooStruct{:foo => "b"} }
+  end
+
+
   # Tags
   test "tag converts irreversibly to Elixir" do
     tagged = "#inst \"1985-04-12T23:20:50.52Z\""
@@ -136,8 +226,9 @@ defmodule ExdnTest do
 
   test "custom tag can be handled in irreversible conversions by providing a handler" do
     tagged = "#foo \"blarg\""
-    handler = fn(_tag, val, _handlers) -> val <> "-converted" end
-    assert Exdn.to_elixir!(tagged, [{:foo, handler}]) == "blarg-converted"
+    identity = &(&1)
+    handler = fn(_tag, val, _converter, _handlers) -> val <> "-converted" end
+    assert Exdn.to_elixir!(tagged, identity, [{:foo, handler}]) == "blarg-converted"
   end
 
   # to_elixir - safe version. We'll test this selectively since it's based on the to_elixir! function
@@ -401,6 +492,28 @@ defmodule ExdnTest do
   end
 
 
+  # Structs
+  test "simple struct can be converted to EDN" do
+    struct1 = %FooStruct{:foo => 1}
+    assert Exdn.from_elixir!(struct1) == "{:foo 1}"
+  end
+
+  test "struct with nested map can be converted to EDN" do
+    struct2 = %FooStruct{:foo => %{:bar => "b"} }
+    assert Exdn.from_elixir!(struct2) == "{:foo {:bar \"b\"}}"
+  end
+
+  test "map with nested struct can be converted to EDN" do
+    struct2 = %{:bar => %FooStruct{:foo => "b"} }
+    assert Exdn.from_elixir!(struct2) == "{:bar {:foo \"b\"}}"
+  end
+
+  test "nested structs can be converted to EDN" do
+    struct2 = %BarStruct{:bar => %FooStruct{:foo => {:char, ?b}}}
+    assert Exdn.from_elixir!(struct2) == "{:bar {:foo \\b}}"
+  end
+
+
   # Tags
   test "tag converts to EDN" do
     tagged = {:tag, :inst, "1985-04-12T23:20:50.52Z"}
@@ -430,7 +543,8 @@ defmodule ExdnTest do
 
   test "expression tagged with :tag can be converted using a handler" do
     tagged = {:tag, :foo, "blarg"}
-    handler = fn(_tag, val, _handlers) -> val <> "-converted" end
-    assert Exdn.evaluate_tagged_expr(tagged, [{:foo, handler}]) == "blarg-converted"
+    identity = &(&1)
+    handler = fn(_tag, val, _converter, _handlers) -> val <> "-converted" end
+    assert Exdn.evaluate_tagged_expr(tagged, identity, [{:foo, handler}]) == "blarg-converted"
   end
 end
