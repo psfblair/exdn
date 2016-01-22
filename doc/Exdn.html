@@ -5,7 +5,7 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.11.3">
-    <title>Exdn – exdn v2.0.0</title>
+    <title>Exdn – exdn v2.1.0</title>
     <link rel="stylesheet" href="dist/app-ddd9717ad9.css" />
     <script src="dist/sidebar_items.js"></script>
   </head>
@@ -27,7 +27,7 @@
         exdn
       </h1>
       <h2 class="sidebar-projectVersion">
-        v2.0.0
+        v2.1.0
       </h2>
     </div>
     
@@ -59,7 +59,7 @@
 
 
       <h1>
-        <small class="visible-xs">exdn v2.0.0</small>
+        <small class="visible-xs">exdn v2.1.0</small>
         Exdn
         
         
@@ -206,7 +206,8 @@ iex&gt; Exdn.from_elixir %{:foo =&gt; {:char, ?a}, {:char, ?b} =&gt; {:tag, :ins
   </div>
   
     <div class="summary-synopsis"><p>interprets a tagged expression using the tagged reversible representation and
-  handlers passed in as a keyword list</p>
+  handlers passed in as a keyword list. Assumes the expression inside the tag has
+  already been translated from edn</p>
 </div>
   
 </div>
@@ -328,7 +329,8 @@ iex&gt; Exdn.from_elixir %{:foo =&gt; {:char, ?a}, {:char, ?b} =&gt; {:tag, :ins
   
   <section class="docstring">
     <p>  interprets a tagged expression using the tagged reversible representation and
-  handlers passed in as a keyword list.</p>
+  handlers passed in as a keyword list. Assumes the expression inside the tag has
+  already been translated from edn.</p>
 <h2>Example:</h2>
 <pre><code class="iex elixir">iex&gt; tagged = {:tag, :foo, &quot;blarg&quot;}
 iex&gt; handler = fn(_tag, val, _converter, _handlers) -&gt; val &lt;&gt; &quot;-converted&quot; end
