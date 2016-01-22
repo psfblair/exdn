@@ -176,7 +176,9 @@ defmodule Exdn do
 
   defp elrldn_to_elixir!( {:tag, tag, val}, converter, handlers )  do
     case converter.({:tag, tag, val}) do
-      {:tag, atag, aval} -> evaluate_tagged_expr({:tag, atag, aval}, converter, handlers)
+      {:tag, atag, aval} ->
+          converted_val = elrldn_to_elixir!(aval, converter, handlers)
+          evaluate_tagged_expr({:tag, atag, converted_val}, converter, handlers)
       anything_else -> anything_else
     end
   end
@@ -364,7 +366,8 @@ defmodule Exdn do
 
   @doc """
     interprets a tagged expression using the tagged reversible representation and
-    handlers passed in as a keyword list.
+    handlers passed in as a keyword list. Assumes the expression inside the tag has
+    already been translated from edn.
 
 ## Example:
 
