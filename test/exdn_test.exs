@@ -230,6 +230,32 @@ defmodule ExdnTest do
     handler = fn(_tag, val, _converter, _handlers) -> val <> "-converted" end
     assert Exdn.to_elixir!(tagged, identity, [{:foo, handler}]) == "blarg-converted"
   end
+  
+  test "Datomic transaction response can be converted to Elixir" do
+    datomic_reply_str = "{:db-before {:basis-t 63}, :db-after {:basis-t 63}, :tx-data [{:a 50, :e 13194139534312, :v #inst \"2016-02-10T19:11:51.221-00:00\", :tx 13194139534312, :added true} {:a 41, :e 63, :v 35, :tx 13194139534312, :added true} {:a 62, :e 63, :v \"A person's name\", :tx 13194139534312, :added true} {:a 10, :e 63, :v :person/name, :tx 13194139534312, :added true} {:a 40, :e 63, :v 23, :tx 13194139534312, :added true} {:a 13, :e 0, :v 63, :tx 13194139534312, :added true}], :tempids {-9223367638809264704 63}}\n"
+    converted = Exdn.to_elixir!(datomic_reply_str)
+    %{:"db-before" => %{:"basis-t" => before_t}} = converted
+    assert is_integer(before_t)
+    %{:"db-after" => %{:"basis-t" => after_t}} = converted
+    assert is_integer(after_t)
+    
+    %{:"tx-data" => tx_data} = converted
+    assert 6 == Enum.count(tx_data)
+    %{e: entity} = hd(tx_data)
+    assert is_integer(entity)
+    %{a: attribute} = hd(tx_data)
+    assert is_integer(attribute)
+    %{v: _} = hd(tx_data)
+    %{tx: transaction} = hd(tx_data)
+    assert is_integer(transaction)
+    %{added: added?} = hd(tx_data)
+    assert added?
+    
+    %{tempids: tempids} = converted
+    assert 1 == Enum.count(tempids)
+    assert (Map.keys(tempids) |> hd |> is_integer)
+    assert (Map.values(tempids) |> hd |> is_integer)    
+  end
 
   # to_elixir - safe version. We'll test this selectively since it's based on the to_elixir! function
   test "nested map converts safely to Elixir" do
