@@ -5,7 +5,7 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.11.3">
-    <title>Exdn – exdn v2.1.1</title>
+    <title>Exdn – exdn v2.1.2</title>
     <link rel="stylesheet" href="dist/app-ddd9717ad9.css" />
     <script src="dist/sidebar_items.js"></script>
   </head>
@@ -27,7 +27,7 @@
         exdn
       </h1>
       <h2 class="sidebar-projectVersion">
-        v2.1.1
+        v2.1.2
       </h2>
     </div>
     
@@ -59,7 +59,7 @@
 
 
       <h1>
-        <small class="visible-xs">exdn v2.1.1</small>
+        <small class="visible-xs">exdn v2.1.2</small>
         Exdn
         
         
@@ -194,6 +194,25 @@ iex&gt; Exdn.from_elixir %{:foo =&gt; {:char, ?a}, {:char, ?b} =&gt; {:tag, :ins
             Summary
           </h1>
           
+  <div class="summary-types summary">
+    <h2>
+      <a href="#types">Types</a>
+    </h2>
+    <div class="summary-row">
+  <div class="summary-signature">
+    <a href="#t:exdn/0">exdn()</a>
+  </div>
+  
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#t:handler/0">handler()</a>
+  </div>
+  
+</div>
+
+  </div>
+
 
           
   <div class="summary-functions summary">
@@ -264,7 +283,7 @@ iex&gt; Exdn.from_elixir %{:foo =&gt; {:char, ?a}, {:char, ?b} =&gt; {:tag, :ins
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#to_elixir/3">to_elixir(val, converter \\ fn x -&gt; x end, handlers \\ standard_handlers)</a>
+    <a href="#to_elixir/3">to_elixir(edn_str, converter \\ fn x -&gt; x end, handlers \\ standard_handlers)</a>
   </div>
   
     <div class="summary-synopsis"><p>parses an edn string into an Elixir data structure, but does not throw
@@ -276,7 +295,7 @@ iex&gt; Exdn.from_elixir %{:foo =&gt; {:char, ?a}, {:char, ?b} =&gt; {:tag, :ins
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#to_elixir!/3">to_elixir!(edn, converter \\ fn x -&gt; x end, handlers \\ standard_handlers)</a>
+    <a href="#to_elixir!/3">to_elixir!(edn_str, converter \\ fn x -&gt; x end, handlers \\ standard_handlers)</a>
   </div>
   
     <div class="summary-synopsis"><p>parses an edn string into an Elixir data structure; this is not a reversible
@@ -288,7 +307,7 @@ iex&gt; Exdn.from_elixir %{:foo =&gt; {:char, ?a}, {:char, ?b} =&gt; {:tag, :ins
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#to_reversible/1">to_reversible(edn)</a>
+    <a href="#to_reversible/1">to_reversible(edn_str)</a>
   </div>
   
     <div class="summary-synopsis"><p>parses an edn string into an Elixir data structure, but in a reversible way —
@@ -309,6 +328,34 @@ iex&gt; Exdn.from_elixir %{:foo =&gt; {:char, ?a}, {:char, ?b} =&gt; {:tag, :ins
       
 
       
+        <section id="types" class="types details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#types">
+              <i class="icon-link"></i>
+            </a>
+            Types
+          </h1>
+          <div class="types-list">
+            <div id="t:exdn/0" class="type-detail">
+  <pre><code class="elixir"><a href="#t:exdn/0">exdn</a> ::
+  atom |
+  boolean |
+  number |
+  <a href="http://elixir-lang.org/docs/stable/elixir/String.html#t:t/0">String.t</a> |
+  tuple |
+  [<a href="#t:exdn/0">exdn</a>] |
+  %{<a href="#t:exdn/0">exdn</a> => <a href="#t:exdn/0">exdn</a>} |
+  <a href="http://elixir-lang.org/docs/stable/elixir/MapSet.html#t:t/0">MapSet.t</a></code></pre>
+  
+</div>
+<div id="t:handler/0" class="type-detail">
+  <pre><code class="elixir"><a href="#t:handler/0">handler</a> :: (atom, term, (<a href="#t:exdn/0">exdn</a> -> <a href="#t:exdn/0">exdn</a>), [{atom, <a href="#t:handler/0">handler</a>}] -> <a href="#t:exdn/0">exdn</a>)</code></pre>
+  
+</div>
+
+          </div>
+        </section>
+      
 
       
         <section id="functions" class="details-list">
@@ -326,6 +373,15 @@ iex&gt; Exdn.from_elixir %{:foo =&gt; {:char, ?a}, {:char, ?b} =&gt; {:tag, :ins
     <span class="signature">evaluate_tagged_expr(arg, converter, handlers)</span>
       
   </div>
+  
+    <div class="specs">
+      <h4 class="specs-title">Specs</h4>
+      <div class="specs-list">
+        
+          <pre><code class="elixir">evaluate_tagged_expr({:tag, atom, <a href="#t:exdn/0">exdn</a>}, (<a href="#t:exdn/0">exdn</a> -> <a href="#t:exdn/0">exdn</a>), [{atom, <a href="#t:handler/0">handler</a>}, ...]) :: <a href="#t:exdn/0">exdn</a></code></pre>
+        
+      </div>
+    </div>
   
   <section class="docstring">
     <p>  interprets a tagged expression using the tagged reversible representation and
@@ -348,6 +404,15 @@ iex&gt; Exdn.evaluate_tagged_expr(tagged, [{:foo, handler}]
       
   </div>
   
+    <div class="specs">
+      <h4 class="specs-title">Specs</h4>
+      <div class="specs-list">
+        
+          <pre><code class="elixir">from_elixir(<a href="#t:exdn/0">exdn</a>) :: {:ok, <a href="http://elixir-lang.org/docs/stable/elixir/String.html#t:t/0">String.t</a>} | {:error, term}</code></pre>
+        
+      </div>
+    </div>
+  
   <section class="docstring">
     <p>  safe version of <a href="#from_elixir!/1"><code class="inline">from_elixir!/1</code></a> — the edn string is returned as the second
   element of a pair whose first element is <code class="inline">:ok</code> — if there is an error the first
@@ -366,6 +431,15 @@ iex&gt; Exdn.evaluate_tagged_expr(tagged, [{:foo, handler}]
     <span class="signature">from_elixir!(elixir_data)</span>
       
   </div>
+  
+    <div class="specs">
+      <h4 class="specs-title">Specs</h4>
+      <div class="specs-list">
+        
+          <pre><code class="elixir">from_elixir!(<a href="#t:exdn/0">exdn</a>) :: <a href="http://elixir-lang.org/docs/stable/elixir/String.html#t:t/0">String.t</a></code></pre>
+        
+      </div>
+    </div>
   
   <section class="docstring">
     <p>  converts an Elixir data structure in the “reversible” format (see below) into
@@ -423,6 +497,15 @@ iex&gt; Exdn.from_elixir! {:tag, :inst, &quot;1985-04-12T23:20:50.52Z&quot;}
       
   </div>
   
+    <div class="specs">
+      <h4 class="specs-title">Specs</h4>
+      <div class="specs-list">
+        
+          <pre><code class="elixir">standard_handlers :: [{:inst, <a href="#t:handler/0">handler</a>} | {:uuid, <a href="#t:handler/0">handler</a>}, ...]</code></pre>
+        
+      </div>
+    </div>
+  
   <section class="docstring">
     <p>   handlers for standard edn tagged expressions #inst and #uuid. If you need to supply
    your own custom handlers for other tags, you may wish to append them to this list of
@@ -438,6 +521,15 @@ iex&gt; Exdn.from_elixir! {:tag, :inst, &quot;1985-04-12T23:20:50.52Z&quot;}
     <span class="signature">tagged_char_to_string(arg)</span>
       
   </div>
+  
+    <div class="specs">
+      <h4 class="specs-title">Specs</h4>
+      <div class="specs-list">
+        
+          <pre><code class="elixir">tagged_char_to_string({:char, [integer]}) :: <a href="http://elixir-lang.org/docs/stable/elixir/String.html#t:t/0">String.t</a></code></pre>
+        
+      </div>
+    </div>
   
   <section class="docstring">
     <p>  extracts a char (as a string) from the tagged reversible representation.</p>
@@ -456,6 +548,15 @@ iex&gt; Exdn.from_elixir! {:tag, :inst, &quot;1985-04-12T23:20:50.52Z&quot;}
       
   </div>
   
+    <div class="specs">
+      <h4 class="specs-title">Specs</h4>
+      <div class="specs-list">
+        
+          <pre><code class="elixir">tagged_list_to_list({:list, [term]}) :: term</code></pre>
+        
+      </div>
+    </div>
+  
   <section class="docstring">
     <p>  extracts a list from the tagged reversible representation; does not operate at all
   on the contents of the extracted list.</p>
@@ -470,9 +571,20 @@ iex&gt; Exdn.from_elixir! {:tag, :inst, &quot;1985-04-12T23:20:50.52Z&quot;}
     <a href="#to_elixir/3" class="detail-link" title="Link to this function">
       <i class="icon-link"></i>
     </a>
-    <span class="signature">to_elixir(val, converter \\ fn x -&gt; x end, handlers \\ standard_handlers)</span>
+    <span class="signature">to_elixir(edn_str, converter \\ fn x -&gt; x end, handlers \\ standard_handlers)</span>
       
   </div>
+  
+    <div class="specs">
+      <h4 class="specs-title">Specs</h4>
+      <div class="specs-list">
+        
+          <pre><code class="elixir">to_elixir(<a href="http://elixir-lang.org/docs/stable/elixir/String.html#t:t/0">String.t</a>, (<a href="#t:exdn/0">exdn</a> -> <a href="#t:exdn/0">exdn</a>), [{atom, <a href="#t:handler/0">handler</a>}, ...]) ::
+  {:ok, <a href="#t:exdn/0">exdn</a>} |
+  {:error, term}</code></pre>
+        
+      </div>
+    </div>
   
   <section class="docstring">
     <p> parses an edn string into an Elixir data structure, but does not throw
@@ -493,9 +605,18 @@ iex&gt; Exdn.to_elixir &quot;{:foo, \a, \b #foo &quot;blarg&quot; }&quot;
     <a href="#to_elixir!/3" class="detail-link" title="Link to this function">
       <i class="icon-link"></i>
     </a>
-    <span class="signature">to_elixir!(edn, converter \\ fn x -&gt; x end, handlers \\ standard_handlers)</span>
+    <span class="signature">to_elixir!(edn_str, converter \\ fn x -&gt; x end, handlers \\ standard_handlers)</span>
       
   </div>
+  
+    <div class="specs">
+      <h4 class="specs-title">Specs</h4>
+      <div class="specs-list">
+        
+          <pre><code class="elixir">to_elixir!(<a href="http://elixir-lang.org/docs/stable/elixir/String.html#t:t/0">String.t</a>, (<a href="#t:exdn/0">exdn</a> -> <a href="#t:exdn/0">exdn</a>), [{atom, <a href="#t:handler/0">handler</a>}, ...]) :: <a href="#t:exdn/0">exdn</a></code></pre>
+        
+      </div>
+    </div>
   
   <section class="docstring">
     <p>   parses an edn string into an Elixir data structure; this is not a reversible
@@ -584,9 +705,18 @@ iex&gt; Exdn.to_elixir! &quot;#foo &quot;blarg&quot;&quot;, [{:foo, handler}]
     <a href="#to_reversible/1" class="detail-link" title="Link to this function">
       <i class="icon-link"></i>
     </a>
-    <span class="signature">to_reversible(edn)</span>
+    <span class="signature">to_reversible(edn_str)</span>
       
   </div>
+  
+    <div class="specs">
+      <h4 class="specs-title">Specs</h4>
+      <div class="specs-list">
+        
+          <pre><code class="elixir">to_reversible(<a href="http://elixir-lang.org/docs/stable/elixir/String.html#t:t/0">String.t</a>) :: <a href="#t:exdn/0">exdn</a></code></pre>
+        
+      </div>
+    </div>
   
   <section class="docstring">
     <p>  parses an edn string into an Elixir data structure, but in a reversible way —
