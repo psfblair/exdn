@@ -52,6 +52,9 @@ defmodule Exdn do
       tagged atom `{:symbol, atom}`                           | symbol
       tagged tuple with tag and value `{:tag, Symbol, Value}` | tagged elements
     """
+    
+  @type exdn :: atom | boolean | number | String.t | tuple | [exdn] | %{exdn => exdn} | MapSet.t 
+  @type handler :: (atom, term, (exdn -> exdn), [{atom, handler}] -> exdn)
 
   @doc """
      parses an edn string into an Elixir data structure; this is not a reversible
@@ -137,8 +140,9 @@ defmodule Exdn do
       iex> Exdn.to_elixir! "#foo \"blarg\"", [{:foo, handler}]
       "blarg-converted"
   """
-  def to_elixir!(edn, converter \\ (fn x -> x end), handlers \\ standard_handlers) do
-    erlang_str = edn |> to_char_list
+  @spec to_elixir!(String.t, (exdn -> exdn), [{atom, handler}, ...]) :: exdn
+  def to_elixir!(edn_str, converter \\ (fn x -> x end), handlers \\ standard_handlers) do
+    erlang_str = edn_str |> to_char_list
     {:ok, erlang_intermediate } = :erldn.parse_str(erlang_str)
     elrldn_to_elixir!(erlang_intermediate, converter, handlers)
   end
@@ -157,9 +161,10 @@ defmodule Exdn do
       iex> Exdn.to_elixir "{:foo, \\a, \\b #foo \"blarg\" }"
       {:error, %RuntimeError{:message => "Handler not found for tag foo with tagged expression blarg"}}
   """
-  def to_elixir(val, converter \\ (fn x -> x end), handlers \\ standard_handlers) do
+  @spec to_elixir(String.t, (exdn -> exdn), [{atom, handler}, ...]) :: {:ok, exdn} | {:error, term}
+  def to_elixir(edn_str, converter \\ (fn x -> x end), handlers \\ standard_handlers) do
     try do
-      {:ok, to_elixir!(val, converter, handlers)}
+      {:ok, to_elixir!(edn_str, converter, handlers)}
     rescue
       e -> {:error, e}
     end
@@ -217,8 +222,9 @@ defmodule Exdn do
       iex> Exdn.to_reversible "#foo \"blarg\""
       {:tag, :foo, "blarg"}
   """
-  def to_reversible(edn) do
-    erlang_str = edn |> to_char_list
+  @spec to_reversible(String.t) :: exdn
+  def to_reversible(edn_str) do
+    erlang_str = edn_str |> to_char_list
     {:ok, erlang_intermediate } = :erldn.parse_str(erlang_str)
     reversible(erlang_intermediate)
   end
@@ -289,6 +295,7 @@ defmodule Exdn do
       iex> Exdn.from_elixir! {:tag, :inst, "1985-04-12T23:20:50.52Z"}
       "#inst \"1985-04-12T23:20:50.52Z\""
   """
+  @spec from_elixir!(exdn) :: String.t
   def from_elixir!(elixir_data) do
     erldn_intermediate = to_erldn_intermediate(elixir_data)
     :erldn.to_string(erldn_intermediate) |> to_string
@@ -304,6 +311,7 @@ defmodule Exdn do
       iex> Exdn.from_elixir %{:foo => {:char, ?a}, {:char, ?b} => {:tag, :inst, "1985-04-12T23:20:50.52Z"} }
       {:ok, "{:foo \\a \\b #inst \"1985-04-12T23:20:50.52Z\"}" }
   """
+  @spec from_elixir(exdn) :: {:ok, String.t} | {:error, term}
   def from_elixir(elixir_data) do
     try do
       {:ok, from_elixir!(elixir_data)}
@@ -352,6 +360,7 @@ defmodule Exdn do
       iex> Exdn.tagged_list_to_list {:list, [:foo]}
       [:foo]
   """
+  @spec tagged_list_to_list({:list, [term]}) :: term
   def tagged_list_to_list({:list, list}), do: list
 
   @doc """
@@ -362,6 +371,7 @@ defmodule Exdn do
       iex> Exdn.tagged_char_to_string {:char, ?a}
       "a"
   """
+  @spec tagged_char_to_string({:char, [integer]}) :: String.t
   def tagged_char_to_string({:char, code}), do: to_string([code])
 
   @doc """
@@ -376,6 +386,7 @@ defmodule Exdn do
       iex> Exdn.evaluate_tagged_expr(tagged, [{:foo, handler}]
       "blarg-converted"
   """
+  @spec evaluate_tagged_expr({:tag, atom, exdn}, (exdn -> exdn), [{atom, handler}, ...]) :: exdn
   def evaluate_tagged_expr({:tag, tag, expr}, converter, handlers) do
     handler = handlers[tag]
     if handler do
@@ -391,6 +402,7 @@ defmodule Exdn do
      your own custom handlers for other tags, you may wish to append them to this list of
      handlers.
   """
+  @spec standard_handlers() :: [{:inst, handler} | {:uuid, handler},...]
   def standard_handlers do
     timestamp_handler = { :inst, fn(_tag, val, _converter, _handlers) -> inst_handler(val) end }
     uuid_handler = { :uuid, fn(_tag, val, _converter, _handlers) -> val |> to_string end }
@@ -398,7 +410,7 @@ defmodule Exdn do
     # discard_handler = { :_, fn(tag, val, _converter, _handlers) -> ??? end }
     [ timestamp_handler, uuid_handler ]
   end
-
+  
   defp inst_handler(char_list) do
     {:ok, result} = char_list |> to_string |> Calendar.DateTime.Parse.rfc3339_utc
     result
