@@ -57,7 +57,8 @@ defmodule Exdn do
 
   @type exdn ::
           atom | boolean | number | String.t() | tuple | [exdn] | %{exdn => exdn} | MapSet.t()
-  @type handler :: (atom, term, (exdn -> exdn), [{atom, handler}] -> exdn)
+  @type converter :: (exdn -> term)
+  @type handler :: (atom, term, converter, [{atom, handler}] -> term)
 
   @doc """
      parses an edn string into an Elixir data structure; this is not a reversible
@@ -143,7 +144,7 @@ defmodule Exdn do
       iex> Exdn.to_elixir! "#foo \"blarg\"", [{:foo, handler}]
       "blarg-converted"
   """
-  @spec to_elixir!(String.t(), (exdn -> exdn), [{atom, handler}, ...]) :: exdn
+  @spec to_elixir!(String.t(), converter, [{atom, handler}, ...]) :: term
   def to_elixir!(edn_str, converter \\ fn x -> x end, handlers \\ standard_handlers) do
     erlang_str = edn_str |> to_char_list
     {:ok, erlang_intermediate} = :erldn.parse_str(erlang_str)
@@ -165,11 +166,13 @@ defmodule Exdn do
       {:error, %RuntimeError{:message => "Handler not found for tag foo with tagged expression blarg"}}
   """
   @spec to_elixir(String.t(), (exdn -> exdn), [{atom, handler}, ...]) ::
-          {:ok, exdn} | {:error, term}
+          {:ok, term} | {:error, term}
   def to_elixir(edn_str, converter \\ fn x -> x end, handlers \\ standard_handlers) do
-    {:ok, to_elixir!(edn_str, converter, handlers)}
-  rescue
-    e -> {:error, e}
+    try do
+      {:ok, to_elixir!(edn_str, converter, handlers)}
+    rescue
+      e -> {:error, e}
+    end
   end
 
   defp elrldn_to_elixir!({:char, char}, converter, _handlers) do
@@ -325,9 +328,11 @@ defmodule Exdn do
   """
   @spec from_elixir(exdn) :: {:ok, String.t()} | {:error, term}
   def from_elixir(elixir_data) do
-    {:ok, from_elixir!(elixir_data)}
-  rescue
-    e -> {:error, e}
+    try do
+      {:ok, from_elixir!(elixir_data)}
+    rescue
+      e -> {:error, e}
+    end
   end
 
   defp to_erldn_intermediate(items) when is_list(items) do
@@ -396,7 +401,7 @@ defmodule Exdn do
       iex> Exdn.evaluate_tagged_expr(tagged, [{:foo, handler}]
       "blarg-converted"
   """
-  @spec evaluate_tagged_expr({:tag, atom, exdn}, (exdn -> exdn), [{atom, handler}, ...]) :: exdn
+  @spec evaluate_tagged_expr({:tag, atom, exdn}, converter, [{atom, handler}, ...]) :: term
   def evaluate_tagged_expr({:tag, tag, expr}, converter, handlers) do
     handler = handlers[tag]
 
