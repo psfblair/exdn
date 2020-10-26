@@ -145,8 +145,8 @@ defmodule Exdn do
       "blarg-converted"
   """
   @spec to_elixir!(String.t(), converter, [{atom, handler}, ...]) :: term
-  def to_elixir!(edn_str, converter \\ fn x -> x end, handlers \\ standard_handlers) do
-    erlang_str = edn_str |> to_char_list
+  def to_elixir!(edn_str, converter \\ fn x -> x end, handlers \\ standard_handlers()) do
+    erlang_str = edn_str |> to_charlist
     {:ok, erlang_intermediate} = :erldn.parse_str(erlang_str)
     elrldn_to_elixir!(erlang_intermediate, converter, handlers)
   end
@@ -167,7 +167,7 @@ defmodule Exdn do
   """
   @spec to_elixir(String.t(), (exdn -> exdn), [{atom, handler}, ...]) ::
           {:ok, term} | {:error, term}
-  def to_elixir(edn_str, converter \\ fn x -> x end, handlers \\ standard_handlers) do
+  def to_elixir(edn_str, converter \\ fn x -> x end, handlers \\ standard_handlers()) do
     try do
       {:ok, to_elixir!(edn_str, converter, handlers)}
     rescue
@@ -236,7 +236,7 @@ defmodule Exdn do
   """
   @spec to_reversible(String.t()) :: exdn
   def to_reversible(edn_str) do
-    erlang_str = edn_str |> to_char_list
+    erlang_str = edn_str |> to_charlist
     {:ok, erlang_intermediate} = :erldn.parse_str(erlang_str)
     reversible(erlang_intermediate)
   end
