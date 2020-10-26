@@ -18,7 +18,7 @@ Once [available in Hex](https://hex.pm/docs/publish), the package can be install
 by adding exdn to your list of dependencies in `mix.exs`:
 
     def deps do
-      [{:exdn, "~> 2.1.2"}]
+      [{:exdn, "~> 2.2.0"}]
     end
 
 ## Usage
