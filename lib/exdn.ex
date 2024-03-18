@@ -313,7 +313,7 @@ defmodule Exdn do
   @spec from_elixir!(exdn) :: String.t()
   def from_elixir!(elixir_data) do
     erldn_intermediate = to_erldn_intermediate(elixir_data)
-    :erldn.to_string(erldn_intermediate) |> to_string
+    :erldn.to_string(erldn_intermediate) |> :erlang.list_to_binary()
   end
 
   @doc """
