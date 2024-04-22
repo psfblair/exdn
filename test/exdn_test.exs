@@ -453,6 +453,10 @@ defmodule ExdnTest do
     assert Exdn.from_elixir!("asd") == "\"asd\""
   end
 
+  test "string with unicode emoji converts to EDN" do
+    assert Exdn.from_elixir!("hello 😊") == "\"hello 😊\""
+  end
+
   # Lists
   # NOTE: Lists are generally used (in Datomic, at least) as forms and
   # not as data structures. So we keep them distinct even in to_elixir!/1
