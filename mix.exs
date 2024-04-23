@@ -4,13 +4,13 @@ defmodule Exdn.Mixfile do
   def project do
     [
       app: :exdn,
-      version: "2.2.0",
+      version: "2.2.1",
       description: """
       a two-way translator between Elixir data structures and strings of data
       following the edn specification.
       """,
       package: package(),
-      elixir: "~> 1.11",
+      elixir: "~> 1.12",
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
       deps: deps()
